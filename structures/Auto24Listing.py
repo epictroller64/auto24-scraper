@@ -56,7 +56,7 @@ class TechnicalDetail(BaseModel):
     trailer_with_brakes: Optional[int] = None
     trailer_without_brakes: Optional[int] = None
     wheelbase: Optional[int] = None
-    engine_size: Optional[int] = None
+    engine_size: Optional[float] = None
     power: Optional[int] = None
     max_speed: Optional[int] = None
     co2: Optional[int] = None
@@ -68,7 +68,7 @@ class TechnicalDetail(BaseModel):
 
 
 class ScrapedListing(BaseModel):
-   preview: ListingPreview
+   preview: ScrapedListingPreview
    images: list[str]
    type: str
    first_reg: str

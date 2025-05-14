@@ -8,10 +8,10 @@ class Auto24ParserService:
     def __init__(self) -> None:
         pass
 
-    def parse_vehicle_details(self, response_text: str, preview: Auto24Listing.ListingPreview):
+    def parse_vehicle_details(self, response_text: str, preview: Auto24Listing.ScrapedListingPreview):
         soup = BeautifulSoup(response_text)
         gallery_element = soup.select("#lightgallery a")
-        images = [x.attrs.get('href') for x in gallery_element if x.attrs.get('href') is not None]
+        images = [x.attrs.get('href', '') for x in gallery_element if x.attrs.get('href') is not None]
         type_element = soup.select_one(".field-liik td.field span.value")
         if not type_element:
             raise Exception("No type element found")
@@ -31,25 +31,26 @@ class Auto24ParserService:
         for section in soup.select("div.equipment"):
             category_headings = section.select("h3.heading.full")
             feature_lists = section.select("ul.group.full")
-            
+
             for heading, ul in zip(category_headings, feature_lists):
                 category = heading.get_text(strip=True)
                 for li in ul.select("li.item"):
                     item = li.get_text(strip=True)
                     features.append(Auto24Listing.Feature(key=category, value=item))
-                    
+
         original_country_element = soup.select_one("div.-brought_from b")
         original_country_text = original_country_element.text if original_country_element else ""
-        
+
         location_text = ""
-        
+
         inspection_until_element = soup.select_one("div.-status b")
         inspection_until_text = inspection_until_element.text if inspection_until_element else ""
-        
+
         seller_name_elem = soup.select_one("address.section.seller h2")
         seller_name = seller_name_elem.text if seller_name_elem else ""
-        
+
         description_elem = soup.select_one(".-user_other")
+        desc_text = description_elem.text if description_elem else ""
         return Auto24Listing.ScrapedListing(
             preview=preview,
             images=images,
@@ -60,11 +61,9 @@ class Auto24ParserService:
             technical_details=technical_details,
             features=features,
             location=location_text,
-           original_country=original_country_text,
-           inspection_until=inspection_until_text,
-          description= 
-           
-            
+            original_country=original_country_text,
+            inspection_until=inspection_until_text,
+            description=desc_text
         )
 
     def parse_vehicle_specifications(self, soup: BeautifulSoup):
@@ -119,7 +118,7 @@ class Auto24ParserService:
                     flat_data["consumption"] = Auto24Listing.Consumption(highway=0, city=0, average=0)
                 elif "linnas" in raw_label:
                     city_consumption = parse_float(value_text)
-                    flat_data["consumption"] = flat_data["consumption"].copy(update={"city": city_consumption})
+                    flat_data["consumption"] = flat_data.get("consumption", Auto24Listing.Consumption(highway=0, city=0, average=0)).copy(update={"city": city_consumption})
                 elif "maanteel" in raw_label:
                     city_consumption = parse_float(value_text)
                     flat_data["consumption"] = flat_data["consumption"].copy(update={"highway": city_consumption})
@@ -167,30 +166,27 @@ class Auto24ParserService:
             extra_element = result.select_one("div.extra")
             if not extra_element:
                 raise Exception("No extra element found while parsing prelisting")
+            price = result.select_one("span.price")
+            price = price.text if price else ""
             mileage = result.select_one("span.mileage")
-            if not mileage:
-                raise Exception("No mileage found while parsing prelisting")
+            mileage = mileage.text if mileage else ""
             fuel = result.select_one("span.fuel.sm-none")
-            if not fuel:
-                raise Exception("No fuel found while parsing prelisting")
+            fuel = fuel.text if fuel else ""
             transmission = result.select_one("span.transmission")
-            if not transmission:
-                raise Exception("No transmission found while parsing prelisting")
+            transmission = transmission.text if transmission else ""
             bodytype = result.select_one("span.bodytype")
-            if not bodytype:
-                raise Exception("No bodytype found while parsing prelisting")
+            bodytype= bodytype.text if bodytype else ""
             drive = result.select_one("span.drive")
-            if not drive:
-                raise Exception("No drive found while parsing prelisting")
+            drive = drive.text if drive else ""
             listing =  Auto24Listing.ScrapedListingPreview(
                 title=title_element.text,
-                price="",
-                mileage="",
+                price=price,
+                mileage=mileage,
                 year=year_text,
-                gearbox="",
-                body="",
-                fuel_type="",
-                drive="",
+                gearbox=transmission,
+                body=bodytype,
+                fuel_type=fuel,
+                drive=drive,
                 mark=mark,
                 model=model,
                 model_short=model_short,
