@@ -32,7 +32,7 @@ class Auto24ScraperService:
         """
         url = f"{self.base_url}{path}"
         response_text = await self.network_service.get_request(url)
-        vehicle_details = Auto24ParserService.
+        vehicle_details = Auto24ParserService
         
     async def scrape_prelistings(self, path: str):
        response_text = await self.network_service.get_request(self.get_url(path))
